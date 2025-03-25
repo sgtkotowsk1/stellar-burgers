@@ -1,7 +1,7 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import { Preloader } from '../ui/preloader';
 import { IngredientDetailsUI } from '../ui/ingredient-details';
-import { useSelector } from '../../services/store';
+import { useAppSelector } from '../../services/store';
 
 import { redirect, useParams } from 'react-router-dom';
 
@@ -12,9 +12,14 @@ export const IngredientDetails: FC = () => {
     redirect('/');
     return null;
   }
-  const { ingredients, error } = useSelector((state) => state.ingredients);
+
+  const { ingredients, error, isLoading } = useAppSelector(
+    (state) => state.ingredients
+  );
 
   const ingredientData = ingredients.find((item) => item._id === id);
+
+  const [isImageLoaded, setImageLoaded] = useState(false);
 
   if (!ingredientData) {
     return <Preloader />;
@@ -24,5 +29,13 @@ export const IngredientDetails: FC = () => {
     return <p>Ингредиент не найден</p>;
   }
 
-  return <IngredientDetailsUI ingredientData={ingredientData} />;
+  return (
+    <>
+      {(!isImageLoaded || isLoading) && <Preloader />}
+      <IngredientDetailsUI
+        ingredientData={ingredientData}
+        onImageLoad={() => setImageLoaded(true)}
+      />
+    </>
+  );
 };

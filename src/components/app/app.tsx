@@ -12,12 +12,7 @@ import {
 import '../../index.css';
 import styles from './app.module.css';
 
-import {
-  AppHeader,
-  BurgerConstructor,
-  IngredientDetails,
-  Modal
-} from '@components';
+import { AppHeader, IngredientDetails, Modal, OrderInfo } from '@components';
 import {
   BrowserRouter,
   Route,
@@ -25,11 +20,20 @@ import {
   useLocation,
   useNavigate
 } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useAppDispatch } from '../../services/store';
+import { fetchIngredients } from '../../slices/ingredientSlice';
 
 const App = () => {
   const location = useLocation();
   const background = location.state?.background;
   const navigate = useNavigate();
+
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    dispatch(fetchIngredients());
+  }, [dispatch]);
+
   return (
     <div className={styles.app}>
       <AppHeader />
@@ -38,6 +42,7 @@ const App = () => {
         <Route path='/' element={<ConstructorPage />} />
         <Route path='/feed' element={<Feed />} />
         <Route path='/ingredients/:id' element={<IngredientDetails />} />
+        <Route path='/feed/:number' element={<OrderInfo />} />
         {/* Защищённые роуты */}
         {/* <Route path="/login" element={<ProtectedRoute element={<Login />} />} />
         <Route path="/register" element={<ProtectedRoute element={<Register />} />} />
@@ -60,6 +65,19 @@ const App = () => {
                 title='Детали ингредиента'
               >
                 <IngredientDetails />
+              </Modal>
+            }
+          />
+          <Route
+            path='/feed/:number'
+            element={
+              <Modal
+                onClose={() => {
+                  navigate(-1);
+                }}
+                title='Детали заказа'
+              >
+                <OrderInfo />
               </Modal>
             }
           />

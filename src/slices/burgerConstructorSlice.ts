@@ -21,7 +21,6 @@ const burgerConstructorSlice = createSlice({
   reducers: {
     setBun: (state, action: PayloadAction<TIngredient>) => {
       state.bun = action.payload;
-      console.log(state.bun);
     },
     addIngredient: (state, action: PayloadAction<TConstructorIngredient>) => {
       state.ingredients.push(action.payload);
