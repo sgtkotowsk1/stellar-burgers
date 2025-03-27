@@ -9,7 +9,7 @@ import { fetchOrderByNumber } from '../../slices/orderSlice';
 export const OrderInfo: FC = () => {
   const { number } = useParams<{ number: string }>();
   const { ingredients } = useAppSelector((state) => state.ingredients);
-  const orderData = useAppSelector((state) => state.order.order);
+  const orderData = useAppSelector((state) => state.order.orderModalData);
   const isLoading = useAppSelector((state) => state.order.isLoading);
 
   const dispatch = useAppDispatch();

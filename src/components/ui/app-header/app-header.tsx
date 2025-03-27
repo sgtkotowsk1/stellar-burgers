@@ -8,6 +8,7 @@ import {
   ProfileIcon
 } from '@zlden/react-developer-burger-ui-components';
 import { Link, useLocation } from 'react-router-dom';
+import { AppRoutes } from '../../app/appRoutes';
 
 export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => {
   const location = useLocation();
@@ -16,10 +17,10 @@ export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => {
       <nav className={`${styles.menu} p-4`}>
         <div className={styles.menu_part_left}>
           <Link
-            to={'/'}
+            to={AppRoutes.HOME}
             className={styles.link}
             style={
-              location.pathname === '/'
+              location.pathname === AppRoutes.HOME
                 ? { color: 'var(--text-primary-color)' }
                 : {}
             }
@@ -30,10 +31,10 @@ export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => {
             </p>
           </Link>
           <Link
-            to={'/feed'}
+            to={AppRoutes.FEED}
             className={styles.link}
             style={
-              location.pathname === '/feed'
+              location.pathname === AppRoutes.FEED
                 ? { color: 'var(--text-primary-color)' }
                 : {}
             }
@@ -48,10 +49,10 @@ export const AppHeaderUI: FC<TAppHeaderUIProps> = ({ userName }) => {
 
         <div className={styles.link_position_last}>
           <Link
-            to={'/'}
+            to={AppRoutes.PROFILE}
             className={styles.link}
             style={
-              location.pathname === '/profile'
+              location.pathname === AppRoutes.PROFILE
                 ? { color: 'var(--text-primary-color)' }
                 : {}
             }

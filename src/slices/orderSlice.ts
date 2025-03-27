@@ -1,7 +1,6 @@
 import { getOrderByNumberApi, orderBurgerApi } from '@api';
 import {
   Action,
-  AnyAction,
   createAsyncThunk,
   createSlice,
   PayloadAction
@@ -9,19 +8,21 @@ import {
 import { newOrder, TOrder } from '@utils-types';
 
 type OrderType = {
-  order: TOrder | undefined;
   name: string;
   isLoading: boolean;
   error: string | null;
-  newOrder: newOrder | undefined;
+  newOrder: newOrder | null;
+  orderRequest: boolean;
+  orderModalData: TOrder | null;
 };
 
 const initialState: OrderType = {
-  newOrder: undefined,
-  order: undefined,
+  newOrder: null,
   name: '',
   isLoading: false,
-  error: null
+  error: null,
+  orderModalData: null,
+  orderRequest: false
 };
 
 export const fetchOrderByNumber = createAsyncThunk(
@@ -31,7 +32,7 @@ export const fetchOrderByNumber = createAsyncThunk(
       const result = await getOrderByNumberApi(number);
       return result.orders[0];
     } catch (error) {
-      rejectWithValue(error || 'Ошибка загрузки данных заказа');
+      return rejectWithValue(error || 'Ошибка загрузки данных заказа');
     }
   }
 );
@@ -43,35 +44,45 @@ export const fetchOrderBurger = createAsyncThunk(
       const result = await orderBurgerApi(data);
       return { order: result.order, name: result.name };
     } catch (error) {
-      rejectWithValue(error || 'Ошибка загрузки данных заказа');
+      return rejectWithValue(error || 'Ошибка загрузки данных заказа');
     }
   }
 );
 
-const isPendingAction = (action: Action) => action.type.endsWith('/pending');
-
-const isRejectedAction = (action: Action) => action.type.endsWith('/rejected');
-
 const orderSlice = createSlice({
   name: 'order',
   initialState,
-  reducers: {},
+  reducers: {
+    resetOrderModalData(state) {
+      state.orderModalData = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
+      .addCase(fetchOrderByNumber.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(fetchOrderByNumber.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.order = action.payload;
+        state.orderModalData = action.payload;
+        state.orderRequest = false;
+      })
+      .addCase(fetchOrderByNumber.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      .addCase(fetchOrderBurger.pending, (state) => {
+        state.isLoading = true;
+        state.orderRequest = true;
       })
       .addCase(fetchOrderBurger.fulfilled, (state, action) => {
         state.isLoading = false;
         state.newOrder = action.payload;
+        state.orderRequest = false;
       })
-      .addMatcher(isPendingAction, (state) => {
-        state.isLoading = true;
-      })
-      .addMatcher(isRejectedAction, (state, action: PayloadAction<string>) => {
+      .addCase(fetchOrderBurger.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload;
+        state.error = action.payload as string;
       });
   }
 });

@@ -4,15 +4,11 @@ import { TConstructorIngredient, TIngredient, TOrder } from '@utils-types';
 type ConstructorState = {
   bun: TIngredient | null;
   ingredients: TConstructorIngredient[];
-  orderRequest: boolean;
-  orderModalData: TOrder | null;
 };
 
 const initialState: ConstructorState = {
   bun: null,
-  ingredients: [],
-  orderRequest: false,
-  orderModalData: null
+  ingredients: []
 };
 
 const burgerConstructorSlice = createSlice({

@@ -1,16 +1,23 @@
-import { FC, useMemo } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { TConstructorIngredient, TIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { fetchOrderBurger } from '../../slices/orderSlice';
+import { useNavigate } from 'react-router-dom';
+import { Modal } from '../modal';
 
 export const BurgerConstructor: FC = () => {
   /** TODO: взять переменные constructorItems, orderRequest и orderModalData из стора */
   const dispatch = useAppDispatch();
-
-  const { bun, ingredients, orderRequest, orderModalData } = useAppSelector(
+  const navigate = useNavigate();
+  const { bun, ingredients } = useAppSelector(
     (state) => state.burgerConstructor
+  );
+  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
+
+  const { orderModalData, orderRequest } = useAppSelector(
+    (state) => state.order
   );
 
   const constructorItems = {
@@ -18,12 +25,22 @@ export const BurgerConstructor: FC = () => {
     ingredients: ingredients ?? []
   };
 
-  const onOrderClick = () => {
-    if (!constructorItems.bun) return;
+  const [error, setError] = useState<string | null>(null);
 
-    // if (!isAuthenticated) {
-    //   return navigate('/login');
-    // }
+  const onOrderClick = () => {
+    if (!constructorItems.bun) {
+      setError('Выберите булку для заказа!');
+      return;
+    }
+
+    if (!constructorItems.bun && !constructorItems.ingredients) {
+      setError('Нельзя исполнить пустой заказ:)');
+    }
+
+    setError(null); // Очистка ошибки, если всё ок
+
+    if (orderRequest) return;
+    if (!isAuthenticated) return navigate('/login');
 
     const order = [
       constructorItems.bun._id,
@@ -54,6 +71,7 @@ export const BurgerConstructor: FC = () => {
       orderModalData={orderModalData}
       onOrderClick={onOrderClick}
       closeOrderModal={closeOrderModal}
+      error={error}
     />
   );
 };

@@ -23,6 +23,9 @@ import {
 import { useEffect } from 'react';
 import { useAppDispatch } from '../../services/store';
 import { fetchIngredients } from '../../slices/ingredientSlice';
+import { AppRoutes } from './appRoutes';
+import ProtectedRoute from '../protectedRoute/ProtectedRoute';
+import { fetchLoginUser, fetchUser } from '../../slices/userSlice';
 
 const App = () => {
   const location = useLocation();
@@ -34,49 +37,70 @@ const App = () => {
     dispatch(fetchIngredients());
   }, [dispatch]);
 
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    console.log(accessToken);
+    if (accessToken) {
+      dispatch(fetchUser());
+    }
+  }, []);
   return (
     <div className={styles.app}>
       <AppHeader />
       <Routes location={background || location}>
         {/* Обычные роуты */}
-        <Route path='/' element={<ConstructorPage />} />
-        <Route path='/feed' element={<Feed />} />
-        <Route path='/ingredients/:id' element={<IngredientDetails />} />
-        <Route path='/feed/:number' element={<OrderInfo />} />
+        <Route path={AppRoutes.HOME} element={<ConstructorPage />} />
+        <Route path={AppRoutes.FEED} element={<Feed />} />
+        <Route
+          path={AppRoutes.INGREDIENT_DETAILS}
+          element={<IngredientDetails />}
+        />
+        <Route path={AppRoutes.ORDER_DETAILS} element={<OrderInfo />} />
+
         {/* Защищённые роуты */}
-        {/* <Route path="/login" element={<ProtectedRoute element={<Login />} />} />
-        <Route path="/register" element={<ProtectedRoute element={<Register />} />} />
-        <Route path="/forgot-password" element={<ProtectedRoute element={<ForgotPassword />} />} />
-        <Route path="/reset-password" element={<ProtectedRoute element={<ResetPassword />} />} />
-        <Route path="/profile" element={<ProtectedRoute element={<Profile />} />} />
-        <Route path="/profile/orders" element={<ProtectedRoute element={<ProfileOrders />} />} /> */}
+        <Route
+          path={AppRoutes.LOGIN}
+          element={<ProtectedRoute onlyUnAuth children={<Login />} />}
+        />
+        <Route
+          path={AppRoutes.REGISTER}
+          element={<ProtectedRoute onlyUnAuth children={<Register />} />}
+        />
+        <Route
+          path={AppRoutes.FORGOT_PASSWORD}
+          element={<ProtectedRoute onlyUnAuth children={<ForgotPassword />} />}
+        />
+        <Route
+          path={AppRoutes.RESET_PASSWORD}
+          element={<ProtectedRoute onlyUnAuth children={<ResetPassword />} />}
+        />
+        <Route
+          path={AppRoutes.PROFILE}
+          element={<ProtectedRoute children={<Profile />} />}
+        >
+          <Route index element={<Profile />} />
+          <Route path='orders' element={<ProfileOrders />} />
+        </Route>
+
         {/* Страница 404 */}
-        <Route path='*' element={<NotFound404 />} />
+        <Route path={AppRoutes.NOT_FOUND} element={<NotFound404 />} />
       </Routes>
+
+      {/* Модальные окна */}
       {background && (
         <Routes>
           <Route
-            path='/ingredients/:id'
+            path={AppRoutes.INGREDIENT_DETAILS}
             element={
-              <Modal
-                onClose={() => {
-                  navigate(-1);
-                }}
-                title='Детали ингредиента'
-              >
+              <Modal onClose={() => navigate(-1)} title='Детали ингредиента'>
                 <IngredientDetails />
               </Modal>
             }
           />
           <Route
-            path='/feed/:number'
+            path={AppRoutes.ORDER_DETAILS}
             element={
-              <Modal
-                onClose={() => {
-                  navigate(-1);
-                }}
-                title='Детали заказа'
-              >
+              <Modal onClose={() => navigate(-1)} title='Детали заказа'>
                 <OrderInfo />
               </Modal>
             }
