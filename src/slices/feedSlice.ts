@@ -1,6 +1,6 @@
 import { getFeedsApi } from '@api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { TOrder, TOrdersData } from '@utils-types';
+import { TOrdersData } from '@utils-types';
 
 type FeedType = {
   isLoading: boolean;

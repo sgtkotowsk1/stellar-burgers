@@ -1,22 +1,35 @@
-import { getOrderByNumberApi, orderBurgerApi } from '@api';
+import { getOrderByNumberApi, getOrdersApi, orderBurgerApi } from '@api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { newOrder, TOrder } from '@utils-types';
 
 type OrderType = {
-  name: string;
+  userOrders: TOrder[];
   isLoading: boolean;
   error: string | null;
   orderRequest: boolean;
   orderModalData: TOrder | null;
+  userOrdersLoading: boolean;
 };
 
 const initialState: OrderType = {
-  name: '',
+  userOrders: [],
+  userOrdersLoading: false,
   isLoading: false,
   error: null,
   orderModalData: null,
   orderRequest: false
 };
+
+export const fetchOrders = createAsyncThunk(
+  'userOrders',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getOrdersApi();
+    } catch (error) {
+      return rejectWithValue(error || 'Ошибка загрузки заказов пользователя');
+    }
+  }
+);
 
 export const fetchOrderByNumber = createAsyncThunk(
   'orderByNumber',
@@ -47,8 +60,7 @@ const orderSlice = createSlice({
   initialState,
   reducers: {
     resetOrderModalData(state) {
-      console.log('resetOrderModalData вызван');
-      return initialState;
+      state.orderModalData = null;
     }
   },
   extraReducers: (builder) => {
@@ -64,6 +76,19 @@ const orderSlice = createSlice({
       .addCase(fetchOrderByNumber.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchOrders.pending, (state) => {
+        state.userOrdersLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchOrders.fulfilled, (state, action) => {
+        state.userOrdersLoading = false;
+        state.error = null;
+        state.userOrders = action.payload;
+      })
+      .addCase(fetchOrders.rejected, (state, action) => {
+        state.userOrdersLoading = false;
+        state.error = action.error as string;
       })
       .addCase(fetchOrderBurger.pending, (state) => {
         state.isLoading = true;

@@ -13,28 +13,20 @@ import '../../index.css';
 import styles from './app.module.css';
 
 import { AppHeader, IngredientDetails, Modal, OrderInfo } from '@components';
-import {
-  BrowserRouter,
-  Route,
-  Routes,
-  useLocation,
-  useNavigate
-} from 'react-router-dom';
+import { Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAppDispatch } from '../../services/store';
+import { useAppDispatch, useAppSelector } from '../../services/store';
 import { fetchIngredients } from '../../slices/ingredientSlice';
 import { AppRoutes } from './appRoutes';
 import ProtectedRoute from '../protectedRoute/ProtectedRoute';
 import { fetchCheckAuth } from '../../slices/userSlice';
-import { refreshToken, TRegisterData } from '@api';
-import { resetOrderModalData } from '../../slices/orderSlice';
-import { ErrorMessage } from '../error/error';
 
 const App = () => {
   const location = useLocation();
   const background = location.state?.background;
-  const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
 
   useEffect(() => {
     dispatch(fetchIngredients());
@@ -43,7 +35,6 @@ const App = () => {
 
   const handleModalClose = () => {
     navigate(-1);
-    dispatch(resetOrderModalData());
   };
 
   return (
@@ -79,10 +70,12 @@ const App = () => {
         <Route
           path={AppRoutes.PROFILE}
           element={<ProtectedRoute children={<Profile />} />}
-        >
-          <Route index element={<Profile />} />
-          <Route path='orders' element={<ProfileOrders />} />
-        </Route>
+        />
+        <Route
+          path={AppRoutes.PROFILE_ORDERS}
+          element={<ProtectedRoute children={<ProfileOrders />} />}
+        />
+
         <Route
           path={AppRoutes.PROFILE_ORDERS}
           element={<ProtectedRoute children={<OrderInfo />} />}

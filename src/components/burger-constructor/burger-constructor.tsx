@@ -1,13 +1,13 @@
-import { FC, useEffect, useMemo, useState } from 'react';
+import { FC, useMemo } from 'react';
 import { TConstructorIngredient, TIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 
 import { useAppDispatch, useAppSelector } from '../../services/store';
 import { fetchOrderBurger, resetOrderModalData } from '../../slices/orderSlice';
 import { useNavigate } from 'react-router-dom';
+import { resetConstructor } from '../../slices/burgerConstructorSlice';
 
 export const BurgerConstructor: FC = () => {
-  /** TODO: взять переменные constructorItems, orderRequest и orderModalData из стора */
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { bun, ingredients } = useAppSelector(
@@ -41,17 +41,9 @@ export const BurgerConstructor: FC = () => {
   };
 
   const closeOrderModal = () => {
-    console.log('Закрытие модалки');
+    dispatch(resetConstructor());
     dispatch(resetOrderModalData());
   };
-
-  useEffect(() => {
-    console.log('orderModalData изменился:', orderModalData);
-  }, [orderModalData]);
-
-  useEffect(() => {
-    console.log('🟢 Компонент BurgerConstructor обновился');
-  }, []);
 
   const price = useMemo(
     () =>

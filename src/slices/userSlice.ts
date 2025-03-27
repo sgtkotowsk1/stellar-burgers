@@ -51,14 +51,20 @@ export const fetchCheckAuth = createAsyncThunk(
   'checkAuth',
   async (_, { dispatch, rejectWithValue }) => {
     try {
-      const accessToken = getCookie('accessToken');
+      let accessToken = getCookie('accessToken');
 
       if (!accessToken) {
-        await refreshToken();
+        const refreshData = await refreshToken();
+        if (!refreshData) {
+          throw new Error('Не удалось обновить токен');
+        }
+        accessToken = refreshData.accessToken;
       }
-      const result = await dispatch(fetchUser()).unwrap();
+
+      const result = await dispatch(fetchUser(accessToken)).unwrap();
       return result;
     } catch (error) {
+      console.error('Ошибка авторизации:', error);
       return rejectWithValue('Ошибка авторизации');
     }
   }
@@ -111,12 +117,13 @@ export const fetchResetPass = createAsyncThunk(
 
 export const fetchUser = createAsyncThunk(
   'getUser',
-  async (_, { rejectWithValue }) => {
+  async (accessToken: string, { rejectWithValue }) => {
     try {
-      const result = await getUserApi();
-      return result;
+      const token = accessToken || getCookie('accessToken');
+      const result = await getUserApi(token);
+      return result.user;
     } catch (error) {
-      return rejectWithValue(error || 'Ошибка при загрузке пользователя');
+      return rejectWithValue('Ошибка при загрузке пользователя');
     }
   }
 );
@@ -161,7 +168,7 @@ const userSlice = createSlice({
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
       })
       .addCase(fetchUpdateUser.fulfilled, (state, action) => {
         state.isLoading = false;
