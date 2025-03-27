@@ -25,25 +25,27 @@ import { useAppDispatch } from '../../services/store';
 import { fetchIngredients } from '../../slices/ingredientSlice';
 import { AppRoutes } from './appRoutes';
 import ProtectedRoute from '../protectedRoute/ProtectedRoute';
-import { fetchLoginUser, fetchUser } from '../../slices/userSlice';
+import { fetchCheckAuth } from '../../slices/userSlice';
+import { refreshToken, TRegisterData } from '@api';
+import { resetOrderModalData } from '../../slices/orderSlice';
+import { ErrorMessage } from '../error/error';
 
 const App = () => {
   const location = useLocation();
   const background = location.state?.background;
   const navigate = useNavigate();
-
   const dispatch = useAppDispatch();
+
   useEffect(() => {
     dispatch(fetchIngredients());
+    dispatch(fetchCheckAuth());
   }, [dispatch]);
 
-  useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
-    console.log(accessToken);
-    if (accessToken) {
-      dispatch(fetchUser());
-    }
-  }, []);
+  const handleModalClose = () => {
+    navigate(-1);
+    dispatch(resetOrderModalData());
+  };
+
   return (
     <div className={styles.app}>
       <AppHeader />
@@ -81,8 +83,11 @@ const App = () => {
           <Route index element={<Profile />} />
           <Route path='orders' element={<ProfileOrders />} />
         </Route>
+        <Route
+          path={AppRoutes.PROFILE_ORDERS}
+          element={<ProtectedRoute children={<OrderInfo />} />}
+        />
 
-        {/* Страница 404 */}
         <Route path={AppRoutes.NOT_FOUND} element={<NotFound404 />} />
       </Routes>
 
@@ -92,7 +97,7 @@ const App = () => {
           <Route
             path={AppRoutes.INGREDIENT_DETAILS}
             element={
-              <Modal onClose={() => navigate(-1)} title='Детали ингредиента'>
+              <Modal onClose={handleModalClose} title='Детали ингредиента'>
                 <IngredientDetails />
               </Modal>
             }
@@ -100,7 +105,15 @@ const App = () => {
           <Route
             path={AppRoutes.ORDER_DETAILS}
             element={
-              <Modal onClose={() => navigate(-1)} title='Детали заказа'>
+              <Modal onClose={handleModalClose} title='Детали заказа'>
+                <OrderInfo />
+              </Modal>
+            }
+          />
+          <Route
+            path={AppRoutes.PROFILE_ORDERS}
+            element={
+              <Modal title='Детали заказа' onClose={handleModalClose}>
                 <OrderInfo />
               </Modal>
             }

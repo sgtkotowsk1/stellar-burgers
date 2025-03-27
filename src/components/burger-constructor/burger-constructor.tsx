@@ -3,9 +3,8 @@ import { TConstructorIngredient, TIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 
 import { useAppDispatch, useAppSelector } from '../../services/store';
-import { fetchOrderBurger } from '../../slices/orderSlice';
+import { fetchOrderBurger, resetOrderModalData } from '../../slices/orderSlice';
 import { useNavigate } from 'react-router-dom';
-import { Modal } from '../modal';
 
 export const BurgerConstructor: FC = () => {
   /** TODO: взять переменные constructorItems, orderRequest и orderModalData из стора */
@@ -25,21 +24,11 @@ export const BurgerConstructor: FC = () => {
     ingredients: ingredients ?? []
   };
 
-  const [error, setError] = useState<string | null>(null);
-
   const onOrderClick = () => {
-    if (!constructorItems.bun) {
-      setError('Выберите булку для заказа!');
+    if (!constructorItems.bun || orderRequest) {
       return;
     }
 
-    if (!constructorItems.bun && !constructorItems.ingredients) {
-      setError('Нельзя исполнить пустой заказ:)');
-    }
-
-    setError(null); // Очистка ошибки, если всё ок
-
-    if (orderRequest) return;
     if (!isAuthenticated) return navigate('/login');
 
     const order = [
@@ -51,7 +40,18 @@ export const BurgerConstructor: FC = () => {
     dispatch(fetchOrderBurger(order));
   };
 
-  const closeOrderModal = () => {};
+  const closeOrderModal = () => {
+    console.log('Закрытие модалки');
+    dispatch(resetOrderModalData());
+  };
+
+  useEffect(() => {
+    console.log('orderModalData изменился:', orderModalData);
+  }, [orderModalData]);
+
+  useEffect(() => {
+    console.log('🟢 Компонент BurgerConstructor обновился');
+  }, []);
 
   const price = useMemo(
     () =>
@@ -71,7 +71,6 @@ export const BurgerConstructor: FC = () => {
       orderModalData={orderModalData}
       onOrderClick={onOrderClick}
       closeOrderModal={closeOrderModal}
-      error={error}
     />
   );
 };

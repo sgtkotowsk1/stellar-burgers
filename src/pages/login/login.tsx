@@ -13,13 +13,14 @@ export const Login: FC = () => {
     e.preventDefault();
     const userData = { email, password };
 
-    const resultAction = await dispatch(fetchLoginUser(userData));
-
-    if (fetchLoginUser.fulfilled.match(resultAction)) {
-      const { accessToken, refreshToken } = resultAction.payload;
-
-      localStorage.setItem('accessToken', accessToken);
-      localStorage.setItem('refreshToken', refreshToken);
+    try {
+      const result = await dispatch(fetchLoginUser(userData)).unwrap();
+      if (result) {
+        localStorage.setItem('accessToken', result.accessToken);
+        localStorage.setItem('refreshToken', result.refreshToken);
+      }
+    } catch (error) {
+      console.error('Ошибка авторизации:', error);
     }
   };
 

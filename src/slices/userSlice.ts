@@ -7,10 +7,12 @@ import {
   forgotPasswordApi,
   resetPasswordApi,
   getUserApi,
-  updateUserApi
+  updateUserApi,
+  refreshToken
 } from '@api';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { TUser } from '@utils-types';
+import { getCookie } from '../utils/cookie';
 
 type UserStateType = {
   isAuthenticated: boolean;
@@ -41,6 +43,23 @@ export const fetchRegisterUser = createAsyncThunk(
       return result;
     } catch (error) {
       return rejectWithValue(error || 'Ошибка при регистрации');
+    }
+  }
+);
+
+export const fetchCheckAuth = createAsyncThunk(
+  'checkAuth',
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const accessToken = getCookie('accessToken');
+
+      if (!accessToken) {
+        await refreshToken();
+      }
+      const result = await dispatch(fetchUser()).unwrap();
+      return result;
+    } catch (error) {
+      return rejectWithValue('Ошибка авторизации');
     }
   }
 );

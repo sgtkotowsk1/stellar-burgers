@@ -1,23 +1,16 @@
 import { getOrderByNumberApi, orderBurgerApi } from '@api';
-import {
-  Action,
-  createAsyncThunk,
-  createSlice,
-  PayloadAction
-} from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { newOrder, TOrder } from '@utils-types';
 
 type OrderType = {
   name: string;
   isLoading: boolean;
   error: string | null;
-  newOrder: newOrder | null;
   orderRequest: boolean;
   orderModalData: TOrder | null;
 };
 
 const initialState: OrderType = {
-  newOrder: null,
   name: '',
   isLoading: false,
   error: null,
@@ -41,8 +34,8 @@ export const fetchOrderBurger = createAsyncThunk(
   'orderBurger',
   async (data: string[], { rejectWithValue }) => {
     try {
-      const result = await orderBurgerApi(data);
-      return { order: result.order, name: result.name };
+      const result: newOrder = await orderBurgerApi(data);
+      return result;
     } catch (error) {
       return rejectWithValue(error || 'Ошибка загрузки данных заказа');
     }
@@ -54,7 +47,8 @@ const orderSlice = createSlice({
   initialState,
   reducers: {
     resetOrderModalData(state) {
-      state.orderModalData = null;
+      console.log('resetOrderModalData вызван');
+      return initialState;
     }
   },
   extraReducers: (builder) => {
@@ -77,7 +71,7 @@ const orderSlice = createSlice({
       })
       .addCase(fetchOrderBurger.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.newOrder = action.payload;
+        state.orderModalData = action.payload.order;
         state.orderRequest = false;
       })
       .addCase(fetchOrderBurger.rejected, (state, action) => {
@@ -88,3 +82,5 @@ const orderSlice = createSlice({
 });
 
 export default orderSlice.reducer;
+
+export const { resetOrderModalData } = orderSlice.actions;
