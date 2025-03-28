@@ -19,18 +19,29 @@ import { useAppDispatch, useAppSelector } from '../../services/store';
 import { fetchIngredients } from '../../slices/ingredientSlice';
 import { AppRoutes } from './appRoutes';
 import ProtectedRoute from '../protectedRoute/ProtectedRoute';
-import { fetchCheckAuth } from '../../slices/userSlice';
+import { fetchCheckAuth, setAuthChecked } from '../../slices/userSlice';
+import { getCookie } from '../../utils/cookie';
 
 const App = () => {
   const location = useLocation();
   const background = location.state?.background;
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
 
   useEffect(() => {
     dispatch(fetchIngredients());
-    dispatch(fetchCheckAuth());
+  }, [dispatch]);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (getCookie('refreshToken')) {
+        await dispatch(fetchCheckAuth());
+      } else {
+        dispatch(setAuthChecked(true));
+      }
+    };
+
+    checkAuth();
   }, [dispatch]);
 
   const handleModalClose = () => {
@@ -53,32 +64,59 @@ const App = () => {
         {/* Защищённые роуты */}
         <Route
           path={AppRoutes.LOGIN}
-          element={<ProtectedRoute onlyUnAuth children={<Login />} />}
+          element={
+            <ProtectedRoute onlyUnAuth>
+              <Login />
+            </ProtectedRoute>
+          }
         />
         <Route
           path={AppRoutes.REGISTER}
-          element={<ProtectedRoute onlyUnAuth children={<Register />} />}
+          element={
+            <ProtectedRoute onlyUnAuth>
+              <Register />
+            </ProtectedRoute>
+          }
         />
         <Route
           path={AppRoutes.FORGOT_PASSWORD}
-          element={<ProtectedRoute onlyUnAuth children={<ForgotPassword />} />}
+          element={
+            <ProtectedRoute onlyUnAuth>
+              <ForgotPassword />
+            </ProtectedRoute>
+          }
         />
         <Route
           path={AppRoutes.RESET_PASSWORD}
-          element={<ProtectedRoute onlyUnAuth children={<ResetPassword />} />}
+          element={
+            <ProtectedRoute onlyUnAuth>
+              <ResetPassword />
+            </ProtectedRoute>
+          }
         />
         <Route
           path={AppRoutes.PROFILE}
-          element={<ProtectedRoute children={<Profile />} />}
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
         />
         <Route
           path={AppRoutes.PROFILE_ORDERS}
-          element={<ProtectedRoute children={<ProfileOrders />} />}
+          element={
+            <ProtectedRoute>
+              <ProfileOrders />
+            </ProtectedRoute>
+          }
         />
-
         <Route
           path={AppRoutes.PROFILE_ORDERS}
-          element={<ProtectedRoute children={<OrderInfo />} />}
+          element={
+            <ProtectedRoute>
+              <OrderInfo />
+            </ProtectedRoute>
+          }
         />
 
         <Route path={AppRoutes.NOT_FOUND} element={<NotFound404 />} />

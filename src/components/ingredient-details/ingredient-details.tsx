@@ -3,10 +3,12 @@ import { Preloader } from '../ui/preloader';
 import { IngredientDetailsUI } from '../ui/ingredient-details';
 import { useAppSelector } from '../../services/store';
 
-import { redirect, useParams } from 'react-router-dom';
+import { redirect, useNavigate, useParams } from 'react-router-dom';
+import { Modal } from '../modal';
 
 export const IngredientDetails: FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
 
   if (!id) {
     redirect('/');
@@ -28,6 +30,10 @@ export const IngredientDetails: FC = () => {
   if (error) {
     return <p>Ингредиент не найден</p>;
   }
+
+  const handleModalClose = () => {
+    navigate(-1);
+  };
 
   return (
     <>

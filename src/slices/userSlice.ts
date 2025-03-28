@@ -12,7 +12,7 @@ import {
 } from '@api';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { TUser } from '@utils-types';
-import { getCookie } from '../utils/cookie';
+import { deleteCookie, getCookie, setCookie } from '../utils/cookie';
 
 type UserStateType = {
   isAuthenticated: boolean;
@@ -36,11 +36,14 @@ const isRejectedAction = (action: PayloadAction) =>
   action.type.endsWith('/rejected');
 
 export const fetchRegisterUser = createAsyncThunk(
-  'register',
+  'user/register',
   async (data: TRegisterData, { rejectWithValue }) => {
     try {
       const result = await registerUserApi(data);
-      return result;
+
+      setCookie('accessToken', result.accessToken);
+      setCookie('refreshToken', result.refreshToken);
+      return result.user;
     } catch (error) {
       return rejectWithValue(error || 'Ошибка при регистрации');
     }
@@ -48,34 +51,47 @@ export const fetchRegisterUser = createAsyncThunk(
 );
 
 export const fetchCheckAuth = createAsyncThunk(
-  'checkAuth',
-  async (_, { dispatch, rejectWithValue }) => {
+  'user/checkAuth',
+  async (_, { rejectWithValue }) => {
     try {
-      let accessToken = getCookie('accessToken');
-
-      if (!accessToken) {
-        const refreshData = await refreshToken();
-        if (!refreshData) {
-          throw new Error('Не удалось обновить токен');
-        }
-        accessToken = refreshData.accessToken;
+      // Проверяем наличие хотя бы refreshToken (как индикатор возможной авторизации)
+      const refreshTokenCookie = getCookie('refreshToken');
+      if (!refreshTokenCookie) {
+        return rejectWithValue('Не получен refresh-token ');
       }
 
-      const result = await dispatch(fetchUser(accessToken)).unwrap();
-      return result;
+      const accessToken = getCookie('accessToken');
+      if (!accessToken) {
+        const refreshData = await refreshToken();
+        if (!refreshData.success) {
+          throw new Error('Failed to refresh token');
+        }
+      }
+      const response = await getUserApi();
+
+      if (!response.success) {
+        throw new Error('Failed to get user data');
+      }
+
+      return response.user;
     } catch (error) {
-      console.error('Ошибка авторизации:', error);
-      return rejectWithValue('Ошибка авторизации');
+      deleteCookie('accessToken');
+      deleteCookie('refreshToken');
+      return rejectWithValue(error || 'Authentication error');
     }
   }
 );
 
 export const fetchLoginUser = createAsyncThunk(
-  'login',
+  'user/login',
   async (loginData: TLoginData, { rejectWithValue }) => {
     try {
-      const result = await loginUserApi(loginData);
-      return result;
+      const response = await loginUserApi(loginData);
+
+      setCookie('accessToken', response.accessToken);
+      setCookie('refreshToken', response.refreshToken);
+
+      return response.user;
     } catch (error) {
       return rejectWithValue(error || 'Ошибка при входе');
     }
@@ -83,18 +99,30 @@ export const fetchLoginUser = createAsyncThunk(
 );
 
 export const fetchLogoutUser = createAsyncThunk(
-  'logout',
+  'user/logout',
   async (_, { rejectWithValue }) => {
     try {
-      return await logoutApi();
+      const refreshToken = getCookie('refreshToken');
+      if (!refreshToken) {
+        throw new Error('No refresh token found');
+      }
+
+      await logoutApi(refreshToken);
+
+      deleteCookie('accessToken');
+      deleteCookie('refreshToken');
+
+      return true;
     } catch (error) {
+      deleteCookie('accessToken');
+      deleteCookie('refreshToken');
       return rejectWithValue(error || 'Ошибка при выходе');
     }
   }
 );
 
 export const fetchForgotPass = createAsyncThunk(
-  'forgotPass',
+  'user/forgotPass',
   async (data: { email: string }, { rejectWithValue }) => {
     try {
       await forgotPasswordApi(data);
@@ -105,7 +133,7 @@ export const fetchForgotPass = createAsyncThunk(
 );
 
 export const fetchResetPass = createAsyncThunk(
-  'resetPass',
+  'user/resetPass',
   async (data: { password: string; token: string }, { rejectWithValue }) => {
     try {
       await resetPasswordApi(data);
@@ -116,8 +144,8 @@ export const fetchResetPass = createAsyncThunk(
 );
 
 export const fetchUser = createAsyncThunk(
-  'getUser',
-  async (accessToken: string, { rejectWithValue }) => {
+  'user/getUser',
+  async (accessToken: string | undefined, { rejectWithValue }) => {
     try {
       const token = accessToken || getCookie('accessToken');
       const result = await getUserApi(token);
@@ -129,11 +157,11 @@ export const fetchUser = createAsyncThunk(
 );
 
 export const fetchUpdateUser = createAsyncThunk(
-  'updateUser',
+  'user/updateUser',
   async (user: Partial<TRegisterData>, { rejectWithValue }) => {
     try {
       const result = await updateUserApi(user);
-      return result;
+      return result.user;
     } catch (error) {
       return rejectWithValue(
         error || 'Ошибка при обновлении данных пользователя'
@@ -145,36 +173,61 @@ export const fetchUpdateUser = createAsyncThunk(
 const userSlice = createSlice({
   name: 'user',
   initialState,
-  reducers: {},
+  reducers: {
+    setAuthChecked: (state, action: PayloadAction<boolean>) => {
+      state.isAuthChecked = action.payload;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchRegisterUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
         state.isAuthChecked = true;
+        state.error = undefined;
       })
       .addCase(fetchLoginUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
-        state.user = action.payload.user;
+        state.user = action.payload;
         state.isAuthChecked = true;
+        state.error = undefined;
       })
       .addCase(fetchLogoutUser.fulfilled, (state) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
+        state.isAuthChecked = true;
+        state.error = undefined;
+      })
+      .addCase(fetchCheckAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.isAuthChecked = true;
+        state.error = undefined;
+      })
+      .addCase(fetchCheckAuth.rejected, (state) => {
+        state.isLoading = false;
+        state.isAuthenticated = false;
+        state.user = null;
+        state.isAuthChecked = true;
       })
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload;
+        state.isAuthChecked = true;
+        state.error = undefined;
       })
       .addCase(fetchUpdateUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        state.user = action.payload;
+        state.error = undefined;
       })
       .addMatcher(isPendingAction, (state) => {
+        state.isAuthenticated = false;
         state.isLoading = true;
         state.error = undefined;
       })
@@ -184,4 +237,5 @@ const userSlice = createSlice({
       });
   }
 });
+export const { setAuthChecked } = userSlice.actions;
 export default userSlice.reducer;

@@ -3,19 +3,25 @@ import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
 import { TIngredient } from '@utils-types';
 import { useAppDispatch, useAppSelector } from '../../services/store';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { fetchOrderByNumber } from '../../slices/orderSlice';
+import { Modal } from '../modal';
 
 export const OrderInfo: FC = () => {
   const { number } = useParams<{ number: string }>();
   const { ingredients } = useAppSelector((state) => state.ingredients);
   const orderData = useAppSelector((state) => state.order.orderModalData);
   const isLoading = useAppSelector((state) => state.order.isLoading);
+  const navigate = useNavigate();
 
   const dispatch = useAppDispatch();
   useEffect(() => {
     dispatch(fetchOrderByNumber(Number(number)));
   }, [dispatch]);
+
+  const handleModalClose = () => {
+    navigate(-1);
+  };
 
   /* Готовим данные для отображения */
   const orderInfo = useMemo(() => {
