@@ -19,14 +19,23 @@ import { useAppDispatch, useAppSelector } from '../../services/store';
 import { fetchIngredients } from '../../slices/ingredientSlice';
 import { AppRoutes } from './appRoutes';
 import ProtectedRoute from '../protectedRoute/ProtectedRoute';
-import { fetchCheckAuth, setAuthChecked } from '../../slices/userSlice';
+import {
+  fetchCheckAuth,
+  fetchUser,
+  setAuthChecked
+} from '../../slices/userSlice';
 import { getCookie } from '../../utils/cookie';
+import { refreshToken } from '@api';
+import { resetOrderModalData } from '../../slices/orderSlice';
 
 const App = () => {
   const location = useLocation();
   const background = location.state?.background;
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const orderNumber = useAppSelector(
+    (state) => state.order.orderModalData?.number ?? ''
+  );
 
   useEffect(() => {
     dispatch(fetchIngredients());
@@ -34,7 +43,9 @@ const App = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (getCookie('refreshToken')) {
+      const refreshToken = getCookie('refreshToken');
+      if (refreshToken) {
+        await dispatch(fetchUser());
         await dispatch(fetchCheckAuth());
       } else {
         dispatch(setAuthChecked(true));
@@ -42,9 +53,10 @@ const App = () => {
     };
 
     checkAuth();
-  }, [dispatch]);
+  }, [dispatch, refreshToken]);
 
   const handleModalClose = () => {
+    dispatch(resetOrderModalData());
     navigate(-1);
   };
 
@@ -57,9 +69,12 @@ const App = () => {
         <Route path={AppRoutes.FEED} element={<Feed />} />
         <Route
           path={AppRoutes.INGREDIENT_DETAILS}
-          element={<IngredientDetails />}
+          element={<IngredientDetails title='Детали ингредиента' />}
         />
-        <Route path={AppRoutes.ORDER_DETAILS} element={<OrderInfo />} />
+        <Route
+          path={AppRoutes.ORDER_DETAILS}
+          element={<OrderInfo title={`#${orderNumber}`} />}
+        />
 
         {/* Защищённые роуты */}
         <Route
@@ -111,10 +126,10 @@ const App = () => {
           }
         />
         <Route
-          path={AppRoutes.PROFILE_ORDERS}
+          path={AppRoutes.PROFILE_ORDERS_NUMBER}
           element={
             <ProtectedRoute>
-              <OrderInfo />
+              <OrderInfo title={`#${orderNumber}`} />
             </ProtectedRoute>
           }
         />
@@ -136,15 +151,15 @@ const App = () => {
           <Route
             path={AppRoutes.ORDER_DETAILS}
             element={
-              <Modal onClose={handleModalClose} title='Детали заказа'>
+              <Modal onClose={handleModalClose} title={`#${orderNumber}`}>
                 <OrderInfo />
               </Modal>
             }
           />
           <Route
-            path={AppRoutes.PROFILE_ORDERS}
+            path={AppRoutes.PROFILE_ORDERS_NUMBER}
             element={
-              <Modal title='Детали заказа' onClose={handleModalClose}>
+              <Modal title={`#${orderNumber}`} onClose={handleModalClose}>
                 <OrderInfo />
               </Modal>
             }

@@ -24,7 +24,7 @@ export const BurgerConstructor: FC = () => {
     ingredients: ingredients ?? []
   };
 
-  const onOrderClick = () => {
+  const onOrderClick = async () => {
     if (!constructorItems.bun || orderRequest) {
       return;
     }
@@ -37,11 +37,11 @@ export const BurgerConstructor: FC = () => {
       constructorItems.bun._id
     ];
 
-    dispatch(fetchOrderBurger(order));
+    await dispatch(fetchOrderBurger(order));
+    dispatch(resetConstructor());
   };
 
   const closeOrderModal = () => {
-    dispatch(resetConstructor());
     dispatch(resetOrderModalData());
   };
 

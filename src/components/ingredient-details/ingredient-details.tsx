@@ -3,12 +3,12 @@ import { Preloader } from '../ui/preloader';
 import { IngredientDetailsUI } from '../ui/ingredient-details';
 import { useAppSelector } from '../../services/store';
 
-import { redirect, useNavigate, useParams } from 'react-router-dom';
-import { Modal } from '../modal';
+import { redirect, useLocation, useParams } from 'react-router-dom';
 
-export const IngredientDetails: FC = () => {
+export const IngredientDetails: FC<{ title?: string }> = ({ title }) => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
+  const location = useLocation();
+  const isModalOpen = location.state?.background;
 
   if (!id) {
     redirect('/');
@@ -31,16 +31,14 @@ export const IngredientDetails: FC = () => {
     return <p>Ингредиент не найден</p>;
   }
 
-  const handleModalClose = () => {
-    navigate(-1);
-  };
-
   return (
     <>
       {(!isImageLoaded || isLoading) && <Preloader />}
       <IngredientDetailsUI
         ingredientData={ingredientData}
         onImageLoad={() => setImageLoaded(true)}
+        title={title || 'Детали ингредиента'}
+        isModalOpen={!!isModalOpen}
       />
     </>
   );

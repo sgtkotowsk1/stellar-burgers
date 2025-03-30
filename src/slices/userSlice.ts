@@ -54,7 +54,6 @@ export const fetchCheckAuth = createAsyncThunk(
   'user/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
-      // Проверяем наличие хотя бы refreshToken (как индикатор возможной авторизации)
       const refreshTokenCookie = getCookie('refreshToken');
       if (!refreshTokenCookie) {
         return rejectWithValue('Не получен refresh-token ');
@@ -64,20 +63,18 @@ export const fetchCheckAuth = createAsyncThunk(
       if (!accessToken) {
         const refreshData = await refreshToken();
         if (!refreshData.success) {
-          throw new Error('Failed to refresh token');
+          throw new Error('Ошибка при получении рефреш-токена');
         }
       }
-      const response = await getUserApi();
+      const response = await getUserApi(accessToken);
 
       if (!response.success) {
-        throw new Error('Failed to get user data');
+        throw new Error('Ошибка при получении данных пользователя');
       }
 
       return response.user;
     } catch (error) {
-      deleteCookie('accessToken');
-      deleteCookie('refreshToken');
-      return rejectWithValue(error || 'Authentication error');
+      return rejectWithValue(error || 'Ошибка аутентификации');
     }
   }
 );
@@ -114,8 +111,6 @@ export const fetchLogoutUser = createAsyncThunk(
 
       return true;
     } catch (error) {
-      deleteCookie('accessToken');
-      deleteCookie('refreshToken');
       return rejectWithValue(error || 'Ошибка при выходе');
     }
   }
@@ -147,7 +142,7 @@ export const fetchUser = createAsyncThunk(
   'user/getUser',
   async (accessToken: string | undefined, { rejectWithValue }) => {
     try {
-      const token = accessToken || getCookie('accessToken');
+      const token = accessToken && getCookie('accessToken');
       const result = await getUserApi(token);
       return result.user;
     } catch (error) {
