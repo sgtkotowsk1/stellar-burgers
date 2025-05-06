@@ -52,20 +52,25 @@ export const fetchRegisterUser = createAsyncThunk(
 
 export const fetchCheckAuth = createAsyncThunk(
   'user/checkAuth',
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
       const refreshTokenCookie = getCookie('refreshToken');
+
       if (!refreshTokenCookie) {
-        return rejectWithValue('Не получен refresh-token ');
+        dispatch(fetchUser());
+        return rejectWithValue('Не получен refresh-token');
       }
 
-      const accessToken = getCookie('accessToken');
+      let accessToken = getCookie('accessToken');
+
       if (!accessToken) {
         const refreshData = await refreshToken();
         if (!refreshData.success) {
           throw new Error('Ошибка при получении рефреш-токена');
         }
+        accessToken = refreshData.accessToken;
       }
+
       const response = await getUserApi(accessToken);
 
       if (!response.success) {
@@ -74,6 +79,8 @@ export const fetchCheckAuth = createAsyncThunk(
 
       return response.user;
     } catch (error) {
+      deleteCookie('accessToken');
+      deleteCookie('refreshToken');
       return rejectWithValue(error || 'Ошибка аутентификации');
     }
   }
@@ -140,12 +147,23 @@ export const fetchResetPass = createAsyncThunk(
 
 export const fetchUser = createAsyncThunk(
   'user/getUser',
-  async (accessToken: string | undefined, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => {
+    // убрал accessToken из параметров
     try {
-      const token = accessToken && getCookie('accessToken');
+      const token = getCookie('accessToken');
+      if (!token) {
+        throw new Error('Нет accessToken');
+      }
+
       const result = await getUserApi(token);
+      if (!result.success) {
+        throw new Error('Ошибка получения данных пользователя');
+      }
+
       return result.user;
     } catch (error) {
+      deleteCookie('accessToken');
+      deleteCookie('refreshToken');
       return rejectWithValue('Ошибка при загрузке пользователя');
     }
   }
