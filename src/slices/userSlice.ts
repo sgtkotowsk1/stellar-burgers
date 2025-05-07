@@ -9,8 +9,13 @@ import {
   getUserApi,
   updateUserApi,
   refreshToken
-} from '@api';
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+} from '../utils/burger-api';
+import {
+  createAsyncThunk,
+  createSlice,
+  PayloadAction,
+  SerializedError
+} from '@reduxjs/toolkit';
 import { TUser } from '@utils-types';
 import { deleteCookie, getCookie, setCookie } from '../utils/cookie';
 
@@ -19,21 +24,18 @@ type UserStateType = {
   isAuthChecked: boolean;
   user: TUser | null;
   isLoading: boolean;
-  error: string | undefined;
+  error?: SerializedError;
 };
 
-const initialState: UserStateType = {
+export const initialState: UserStateType = {
   isAuthenticated: false,
   isAuthChecked: false,
   isLoading: false,
-  error: undefined,
   user: null
 };
 
 const isPendingAction = (action: PayloadAction) =>
   action.type.endsWith('/pending');
-const isRejectedAction = (action: PayloadAction) =>
-  action.type.endsWith('/rejected');
 
 export const fetchRegisterUser = createAsyncThunk(
   'user/register',
@@ -45,7 +47,7 @@ export const fetchRegisterUser = createAsyncThunk(
       setCookie('refreshToken', result.refreshToken);
       return result.user;
     } catch (error) {
-      return rejectWithValue(error || 'Ошибка при регистрации');
+      return rejectWithValue(error);
     }
   }
 );
@@ -81,7 +83,7 @@ export const fetchCheckAuth = createAsyncThunk(
     } catch (error) {
       deleteCookie('accessToken');
       deleteCookie('refreshToken');
-      return rejectWithValue(error || 'Ошибка аутентификации');
+      return rejectWithValue(error);
     }
   }
 );
@@ -108,7 +110,7 @@ export const fetchLogoutUser = createAsyncThunk(
     try {
       const refreshToken = getCookie('refreshToken');
       if (!refreshToken) {
-        throw new Error('No refresh token found');
+        throw new Error('Не найден refresh-token');
       }
 
       await logoutApi(refreshToken);
@@ -221,11 +223,14 @@ const userSlice = createSlice({
         state.isAuthChecked = true;
         state.error = undefined;
       })
-      .addCase(fetchCheckAuth.rejected, (state) => {
+      .addCase(fetchCheckAuth.rejected, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
         state.isAuthChecked = true;
+        state.error = action.meta.rejectedWithValue
+          ? (action.payload as SerializedError)
+          : action.error;
       })
       .addCase(fetchUser.fulfilled, (state, action) => {
         state.isLoading = false;
@@ -239,14 +244,34 @@ const userSlice = createSlice({
         state.user = action.payload;
         state.error = undefined;
       })
+      .addCase(fetchRegisterUser.rejected, (state, action) => {
+        state.error = action.meta.rejectedWithValue
+          ? (action.payload as SerializedError)
+          : action.error;
+      })
+      .addCase(fetchLoginUser.rejected, (state, action) => {
+        state.error = action.meta.rejectedWithValue
+          ? (action.payload as SerializedError)
+          : action.error;
+      })
+      .addCase(fetchLogoutUser.rejected, (state, action) => {
+        state.error = action.meta.rejectedWithValue
+          ? (action.payload as SerializedError)
+          : action.error;
+      })
+      .addCase(fetchUser.rejected, (state, action) => {
+        state.error = action.meta.rejectedWithValue
+          ? (action.payload as SerializedError)
+          : action.error;
+      })
+      .addCase(fetchUpdateUser.rejected, (state, action) => {
+        state.error = action.meta.rejectedWithValue
+          ? (action.payload as SerializedError)
+          : action.error;
+      })
       .addMatcher(isPendingAction, (state) => {
-        state.isAuthenticated = false;
         state.isLoading = true;
         state.error = undefined;
-      })
-      .addMatcher(isRejectedAction, (state, action: PayloadAction<string>) => {
-        state.isLoading = false;
-        state.error = action.payload;
       });
   }
 });
