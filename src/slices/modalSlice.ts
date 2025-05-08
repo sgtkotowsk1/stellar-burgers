@@ -5,7 +5,7 @@ type modalStateType = {
   isOpen: boolean;
 };
 
-const initialState = {
+const initialState: modalStateType = {
   title: '',
   isOpen: false
 };

@@ -1,4 +1,8 @@
-import { getOrderByNumberApi, getOrdersApi, orderBurgerApi } from '@api';
+import {
+  getOrderByNumberApi,
+  getOrdersApi,
+  orderBurgerApi
+} from '../../src/utils/burger-api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { newOrder, TOrder } from '@utils-types';
 
@@ -11,7 +15,7 @@ type OrderType = {
   userOrdersLoading: boolean;
 };
 
-const initialState: OrderType = {
+export const initialState: OrderType = {
   userOrders: [],
   userOrdersLoading: false,
   isLoading: false,

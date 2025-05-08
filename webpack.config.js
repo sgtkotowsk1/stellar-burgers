@@ -49,7 +49,8 @@ module.exports = {
   },
   plugins: [
     new ESLintPlugin({
-      extensions: ['.js', '.jsx', '.ts', '.tsx']
+      extensions: ['.js', '.jsx', '.ts', '.tsx'],
+      quiet: true
     }),
     new HtmlWebpackPlugin({
       template: './public/index.html'
@@ -58,7 +59,6 @@ module.exports = {
   ],
   resolve: {
     extensions: [
-      '.*',
       '*',
       '.js',
       '.jsx',
