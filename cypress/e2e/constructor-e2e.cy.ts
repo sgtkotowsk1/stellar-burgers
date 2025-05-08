@@ -50,34 +50,64 @@ describe('Тестирование конструктора бургеров', (
   });
 
   it('добавляет булку в конструктор', () => {
+    cy.get(bunConstructor).should('not.contain', 'Краторная булка N-200i');
     cy.contains('li', 'Краторная булка N-200i').contains('Добавить').click();
     cy.get(bun).should('contain', 'Краторная булка N-200i');
   });
 
   it('добавляет начинку и соус в конструктор', () => {
+    cy.get(bunConstructor).should('not.contain', 'Краторная булка N-200i');
     cy.contains('li', 'Краторная булка N-200i').contains('Добавить').click();
     cy.get(bun).should('contain', 'Краторная булка N-200i');
+
+    cy.get(ingredients).should(
+      'not.contain',
+      'Филе Люминесцентного тетраодонтимформа'
+    );
     cy.contains('li', 'Филе Люминесцентного тетраодонтимформа')
       .contains('Добавить')
       .click();
+    cy.get(ingredients).should(
+      'contain',
+      'Филе Люминесцентного тетраодонтимформа'
+    );
+
+    cy.get(ingredients).should(
+      'not.contain',
+      'Соус традиционный галактический'
+    );
     cy.contains('li', 'Соус традиционный галактический')
       .contains('Добавить')
       .click();
-
-    cy.get(ingredients)
-      .should('contain', 'Филе Люминесцентного тетраодонтимформа')
-      .and('contain', 'Соус традиционный галактический');
+    cy.get(ingredients).should('contain', 'Соус традиционный галактический');
   });
 
   describe('Оформление заказа', () => {
     it('создает заказ и очищает конструктор', () => {
+      cy.get(bunConstructor).should('not.contain', 'Краторная булка N-200i');
       cy.contains('li', 'Краторная булка N-200i').contains('Добавить').click();
+      cy.get(bun).should('contain', 'Краторная булка N-200i');
+
+      cy.get(ingredients).should(
+        'not.contain',
+        'Филе Люминесцентного тетраодонтимформа'
+      );
       cy.contains('li', 'Филе Люминесцентного тетраодонтимформа')
         .contains('Добавить')
         .click();
+      cy.get(ingredients).should(
+        'contain',
+        'Филе Люминесцентного тетраодонтимформа'
+      );
+
+      cy.get(ingredients).should(
+        'not.contain',
+        'Соус традиционный галактический'
+      );
       cy.contains('li', 'Соус традиционный галактический')
         .contains('Добавить')
         .click();
+      cy.get(ingredients).should('contain', 'Соус традиционный галактический');
 
       cy.contains('button', 'Оформить заказ').click();
       cy.wait('@createOrder');
